@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register — Iyungass</title>
+  <link rel="stylesheet" href="student.css">
+  <style>
+    main{max-width:720px;margin:48px auto;padding:20px}
+    label{display:block;font-size:14px;color:#0f172a;margin-bottom:6px}
+    input,select{width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db}
+    button{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:0}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Register</h1>
+    <form id="reg" novalidate>
+      <div style="margin-bottom:12px;">
+        <label>Full name
+          <input name="name" type="text" required>
+        </label>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label>Email
+          <input name="email" type="email" required>
+        </label>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;">
+        <label style="flex:1">Password
+          <input name="pass" type="password" required minlength="6">
+        </label>
+        <label style="flex:1">Confirm
+          <input name="confirm" type="password" required minlength="6">
+        </label>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label>Course
+          <select name="course">
+            <option>Intro to HTML</option>
+            <option>CSS Fundamentals</option>
+            <option>JavaScript Basics</option>
+          </select>
+        </label>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label><input name="terms" type="checkbox" required> I agree to the terms</label>
+      </div>
+      <div>
+        <button type="submit">Create account</button>
+      </div>
+      <p id="msg" style="color:green;margin-top:12px;display:none">Registration successful (demo only).</p>
+    </form>
+  </main>
+
+  <script>
+    const form = document.getElementById('reg');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      if (data.get('pass') !== data.get('confirm')) {
+        alert('Passwords do not match');
+        return;
+      }
+      // Demo-only: show a success message
+      document.getElementById('msg').style.display = 'block';
+      form.reset();
+    });
+  </script>
+</body>
+</html>
