@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="student.css">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div class="brand">Iyungass</div>
+      <nav>
+        <a href="#" class="active">Home</a>
+        <a href="#profile">Profile</a>
+        <a href="#courses">Courses</a>
+        <a href="#settings">Settings</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a class="btn" href="register.html">Register</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="toggle" class="hamburger" aria-label="Toggle menu">☰</button>
+        <h1>Student Dashboard</h1>
+        <div class="account">Signed in as <strong>student@example.com</strong></div>
+      </header>
+
+      <section class="content">
+        <section class="cards">
+          <div class="card">
+            <h2>Profile</h2>
+            <p>Name: <strong>Jane Doe</strong></p>
+            <p>Role: <strong>Student</strong></p>
+            <p>ID: <strong>#123456</strong></p>
+          </div>
+
+          <div class="card">
+            <h2>Progress</h2>
+            <div class="stat"><span class="big">78%</span> Course completion</div>
+            <div class="stat"><span class="big">4</span> Active courses</div>
+          </div>
+
+          <div class="card">
+            <h2>Messages</h2>
+            <p>No unread messages</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Overview</h2>
+          <p>Welcome to your personal dashboard. Use the links on the left to navigate. Click Register to open the registration form.</p>
+        </section>
+      </section>
+
+      <footer class="foot">&copy; Iyungass</footer>
+    </main>
+  </div>
+
+  <script>
+    // Small script to toggle sidebar on small screens
+    const toggle = document.getElementById('toggle');
+    const sidebar = document.querySelector('.sidebar');
+    toggle && toggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
