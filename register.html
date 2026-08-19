@@ -3,18 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Register — Iyungass</title>
-  <link rel="stylesheet" href="student.css">
+  <title>Admission Application — Iyunga Technical Secondary School</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    main{max-width:720px;margin:48px auto;padding:20px}
-    label{display:block;font-size:14px;color:#0f172a;margin-bottom:6px}
-    input,select{width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db}
-    input.invalid{border-color:#dc2626}
-    button{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
+    .app-wrap{max-width:640px;margin:56px auto;padding:0 20px}
+    .app-card{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:10px;padding:32px}
+    .app-header{margin-bottom:28px}
+    .app-header h1{font-size:26px;margin:0 0 6px}
+    .app-header p{color:#64748b;font-size:14px;margin:0}
+    .field{margin-bottom:18px}
+    .field label{display:block;font-size:13px;font-weight:600;color:#0f172a;margin-bottom:6px}
+    .field input,.field select{width:100%;padding:10px 12px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;font-family:inherit}
+    .field input.invalid,.field select.invalid{border-color:#dc2626}
     .field-error{color:#dc2626;font-size:12px;margin-top:4px;display:none}
     .field-error.show{display:block}
+    .field-row{display:flex;gap:14px}
+    .field-row .field{flex:1}
+    .section-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin:26px 0 14px;padding-top:14px;border-top:1px solid rgba(15,23,42,.08)}
+    .section-label:first-of-type{margin-top:0;padding-top:0;border-top:none}
+    .terms-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#334155}
+    .terms-row input{width:auto;margin-top:3px}
+    .app-actions{margin-top:26px}
+    .app-actions button{width:100%}
+    .portal-note{text-align:center;font-size:13px;color:#64748b;margin-top:16px}
+    .portal-note a{color:var(--accent);text-decoration:none;font-weight:600}
 
-    /* Toast notifications */
     #toast-container{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:1000}
     .toast{padding:12px 16px;border-radius:8px;color:#fff;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateX(20px);transition:opacity .2s ease,transform .2s ease}
     .toast.show{opacity:1;transform:translateX(0)}
@@ -23,49 +36,96 @@
   </style>
 </head>
 <body>
-  <main>
-    <h1>Register</h1>
-    <form id="reg" novalidate>
-      <div style="margin-bottom:12px;">
-        <label>Full name
+  <div class="app-wrap">
+    <div class="app-card">
+      <div class="app-header">
+        <h1>Admission Application</h1>
+        <p>Apply for a place at Iyunga Technical Secondary School. Fields marked required must be completed.</p>
+      </div>
+
+      <form id="reg" novalidate>
+        <div class="section-label">Student details</div>
+
+        <div class="field">
+          <label>Full name</label>
           <input name="name" type="text" required>
-        </label>
-        <div class="field-error" id="err-name">Please enter your full name.</div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label>Email
-          <input name="email" type="email" required>
-        </label>
-        <div class="field-error" id="err-email">Please enter a valid email address.</div>
-      </div>
-      <div style="display:flex;gap:12px;margin-bottom:12px;">
-        <label style="flex:1">Password
-          <input name="pass" type="password" required minlength="8">
-          <div class="field-error" id="err-pass">Password must be at least 8 characters and include a letter and a number.</div>
-        </label>
-        <label style="flex:1">Confirm
-          <input name="confirm" type="password" required minlength="8">
-          <div class="field-error" id="err-confirm">Passwords do not match.</div>
-        </label>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label>Course
-          <select name="course">
-            <option>Intro to HTML</option>
-            <option>CSS Fundamentals</option>
-            <option>JavaScript Basics</option>
-          </select>
-        </label>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label><input name="terms" type="checkbox" required> I agree to the terms</label>
-        <div class="field-error" id="err-terms">You must agree to the terms to continue.</div>
-      </div>
-      <div>
-        <button type="submit">Create account</button>
-      </div>
-    </form>
-  </main>
+          <div class="field-error" id="err-name">Please enter the student's full name.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Date of birth</label>
+            <input name="dob" type="date" required>
+            <div class="field-error" id="err-dob">Please enter a date of birth.</div>
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <select name="gender" required>
+              <option value="">Select…</option>
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+            <div class="field-error" id="err-gender">Please select a gender.</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Form applying for</label>
+            <select name="form_level" required>
+              <option value="">Select…</option>
+              <option>Form 1</option>
+              <option>Form 2</option>
+              <option>Form 3</option>
+              <option>Form 4</option>
+              <option>Form 5</option>
+              <option>Form 6</option>
+            </select>
+            <div class="field-error" id="err-form">Please select a form/class.</div>
+          </div>
+          <div class="field">
+            <label>Previous school</label>
+            <input name="prev_school" type="text">
+          </div>
+        </div>
+
+        <div class="section-label">Parent / guardian details</div>
+
+        <div class="field">
+          <label>Parent or guardian name</label>
+          <input name="guardian_name" type="text" required>
+          <div class="field-error" id="err-guardian">Please enter a parent/guardian name.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Phone number</label>
+            <input name="guardian_phone" type="tel" required placeholder="+255 7XX XXX XXX">
+            <div class="field-error" id="err-phone">Please enter a valid phone number.</div>
+          </div>
+          <div class="field">
+            <label>Email (optional)</label>
+            <input name="guardian_email" type="email">
+            <div class="field-error" id="err-email">Please enter a valid email address.</div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:22px">
+          <label class="terms-row">
+            <input name="terms" type="checkbox" required>
+            <span>I confirm the information above is accurate and I agree to the school's admission terms.</span>
+          </label>
+          <div class="field-error" id="err-terms">You must confirm this to continue.</div>
+        </div>
+
+        <div class="app-actions">
+          <button type="submit" class="btn btn-primary">Submit application</button>
+        </div>
+      </form>
+
+      <p class="portal-note">Already admitted? <a href="login.html">Log in to the student portal</a></p>
+    </div>
+  </div>
 
   <div id="toast-container"></div>
 
@@ -75,8 +135,7 @@
 
       var form = document.getElementById('reg');
       var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      // at least 8 chars, one letter, one number
-      var passRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+      var phoneRegex = /^[0-9+\s-]{7,15}$/;
 
       function showError(fieldName, errId, condition) {
         var input = form.elements[fieldName];
@@ -101,9 +160,7 @@
         });
         setTimeout(function () {
           toast.classList.remove('show');
-          setTimeout(function () {
-            toast.remove();
-          }, 200);
+          setTimeout(function () { toast.remove(); }, 200);
         }, 3500);
       }
 
@@ -112,29 +169,38 @@
         var data = new FormData(form);
 
         var name = (data.get('name') || '').trim();
-        var email = (data.get('email') || '').trim();
-        var pass = data.get('pass') || '';
-        var confirm = data.get('confirm') || '';
+        var dob = data.get('dob') || '';
+        var gender = data.get('gender') || '';
+        var formLevel = data.get('form_level') || '';
+        var guardianName = (data.get('guardian_name') || '').trim();
+        var guardianPhone = (data.get('guardian_phone') || '').trim();
+        var guardianEmail = (data.get('guardian_email') || '').trim();
         var terms = form.elements['terms'].checked;
 
         var nameInvalid = name.length === 0;
-        var emailInvalid = !emailRegex.test(email);
-        var passInvalid = !passRegex.test(pass);
-        var confirmInvalid = pass !== confirm || confirm.length === 0;
+        var dobInvalid = dob.length === 0;
+        var genderInvalid = gender.length === 0;
+        var formInvalid = formLevel.length === 0;
+        var guardianInvalid = guardianName.length === 0;
+        var phoneInvalid = !phoneRegex.test(guardianPhone);
+        var emailInvalid = guardianEmail.length > 0 && !emailRegex.test(guardianEmail);
         var termsInvalid = !terms;
 
         showError('name', 'err-name', nameInvalid);
-        showError('email', 'err-email', emailInvalid);
-        showError('pass', 'err-pass', passInvalid);
-        showError('confirm', 'err-confirm', confirmInvalid);
+        showError('dob', 'err-dob', dobInvalid);
+        showError('gender', 'err-gender', genderInvalid);
+        showError('form_level', 'err-form', formInvalid);
+        showError('guardian_name', 'err-guardian', guardianInvalid);
+        showError('guardian_phone', 'err-phone', phoneInvalid);
+        showError('guardian_email', 'err-email', emailInvalid);
         showError('terms', 'err-terms', termsInvalid);
 
-        if (nameInvalid || emailInvalid || passInvalid || confirmInvalid || termsInvalid) {
+        if (nameInvalid || dobInvalid || genderInvalid || formInvalid || guardianInvalid || phoneInvalid || emailInvalid || termsInvalid) {
           showToast('Please fix the errors below.', 'error');
           return;
         }
 
-        showToast('Registration successful! (demo — no database connected yet)', 'success');
+        showToast('Application submitted! (demo — no database connected yet)', 'success');
         form.reset();
       });
     })();
