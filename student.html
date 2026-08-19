@@ -3,11 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Dashboard</title>
+  <title>Student Dashboard — Iyunga Technical Secondary School</title>
   <link rel="stylesheet" href="css/student.css">
   <style>
+    /* ---- Layout refinements ---- */
+    .sidebar nav a[data-view]{cursor:pointer}
     .btn-logout{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;width:100%}
     .btn-logout:hover{background:rgba(255,255,255,.08)}
+
+    .view{display:none}
+    .view.active{display:block}
+
+    /* ---- Profile card ---- */
+    .profile-card{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+    .avatar{width:56px;height:56px;border-radius:50%;background:var(--accent,#2b7cff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0}
+    .profile-id h3{margin:0 0 2px;font-size:17px}
+    .profile-id .muted{color:var(--muted,#6b7280);font-size:13px}
+
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}
+    .info-row{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid rgba(15,23,42,.06)}
+    .info-row .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#6b7280)}
+    .info-row .value{font-size:14px;font-weight:600;color:#0f172a}
+    .info-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#6b7280);margin:18px 0 6px}
+    .info-section-title:first-child{margin-top:0}
+
+    /* ---- Results / notifications ---- */
+    .demo-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:999px;margin-left:8px}
+    .result-list{list-style:none;margin:0;padding:0}
+    .result-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(15,23,42,.06)}
+    .result-item:last-child{border-bottom:none}
+    .result-subject{font-weight:600;font-size:14px}
+    .result-meta{font-size:12px;color:var(--muted,#6b7280)}
+    .result-grade{font-weight:700;font-size:15px;padding:4px 10px;border-radius:6px;background:#dcfce7;color:#16a34a}
+
+    /* ---- Courses ---- */
+    .course-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+    .course-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid rgba(15,23,42,.08);border-radius:8px}
+    .course-item .name{font-weight:600;font-size:14px}
+    .course-item .code{font-size:12px;color:var(--muted,#6b7280)}
+
+    /* ---- Settings ---- */
+    .settings-form .field{margin-bottom:14px;max-width:340px}
+    .settings-form label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+    .settings-form input{width:100%;padding:9px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px}
+    .settings-form .field-error{color:#dc2626;font-size:12px;margin-top:4px;display:none}
+    .settings-form .field-error.show{display:block}
+
+    .danger-zone{margin-top:28px;padding-top:18px;border-top:1px dashed #cbd5e1}
+    .danger-zone h3{font-size:13px;color:#dc2626;margin:0 0 6px}
+    .danger-zone p{font-size:12px;color:var(--muted,#6b7280);margin:0 0 10px}
+    .btn-danger{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer}
+    .btn-danger:hover{background:#fecaca}
+
+    #toast-container{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:1000}
+    .toast{padding:12px 16px;border-radius:8px;color:#fff;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateX(20px);transition:opacity .2s ease,transform .2s ease}
+    .toast.show{opacity:1;transform:translateX(0)}
+    .toast.success{background:#16a34a}
+    .toast.error{background:#dc2626}
   </style>
 </head>
 <body>
@@ -15,10 +67,10 @@
     <aside class="sidebar">
       <div class="brand">Iyungass</div>
       <nav>
-        <a href="#" class="active">Home</a>
-        <a href="#profile">Profile</a>
-        <a href="#courses">Courses</a>
-        <a href="#settings">Settings</a>
+        <a href="#" data-view="home" class="active">Home</a>
+        <a href="#" data-view="profile">Profile</a>
+        <a href="#" data-view="courses">Courses</a>
+        <a href="#" data-view="settings">Settings</a>
       </nav>
       <div class="sidebar-footer">
         <button class="btn-logout" id="logout">Log out</button>
@@ -27,35 +79,116 @@
     <main class="main">
       <header class="topbar">
         <button id="toggle" class="hamburger" aria-label="Toggle menu">☰</button>
-        <h1>Student Dashboard</h1>
+        <h1 id="page-title">Student Dashboard</h1>
         <div class="account">Signed in as <strong id="account-label">…</strong></div>
       </header>
+
       <section class="content">
-        <section class="cards">
-          <div class="card">
-            <h2>Profile</h2>
-            <p>Name: <strong id="profile-name">—</strong></p>
-            <p>Form: <strong id="profile-form">—</strong></p>
-            <p>Admission No: <strong id="profile-id">—</strong></p>
-          </div>
-          <div class="card">
-            <h2>Guardian</h2>
-            <p>Name: <strong id="guardian-name">—</strong></p>
-            <p>Phone: <strong id="guardian-phone">—</strong></p>
-          </div>
-          <div class="card">
-            <h2>Messages</h2>
-            <p>No unread messages</p>
-          </div>
+
+        <!-- HOME VIEW -->
+        <section class="view active" id="view-home">
+          <section class="cards">
+            <div class="card">
+              <div class="profile-card">
+                <div class="avatar" id="avatar-initials">--</div>
+                <div class="profile-id">
+                  <h3 id="home-name">—</h3>
+                  <div class="muted"><span id="home-form">—</span> · <span id="home-admission">—</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Recent results <span class="demo-badge">Demo data</span></h2>
+              <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 8px">Real results will appear here once exams are marked and the school system is connected.</p>
+              <div class="stat"><span class="big" id="home-avg">—</span> Average this term</div>
+            </div>
+            <div class="card">
+              <h2>Notifications</h2>
+              <p id="home-notice">No new notifications.</p>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Overview</h2>
+            <p>Welcome back, <span id="overview-name">student</span>. Your application was received on <span id="overview-date">—</span>.</p>
+          </section>
         </section>
-        <section class="panel">
-          <h2>Overview</h2>
-          <p>Welcome to your personal dashboard, <span id="overview-name">student</span>. Your application was received on <span id="overview-date">—</span>.</p>
+
+        <!-- PROFILE VIEW -->
+        <section class="view" id="view-profile">
+          <section class="panel">
+            <div class="profile-card">
+              <div class="avatar" id="avatar-initials-2">--</div>
+              <div class="profile-id">
+                <h3 id="profile-name">—</h3>
+                <div class="muted" id="profile-admission">—</div>
+              </div>
+            </div>
+
+            <div class="info-section-title">Student details</div>
+            <div class="info-grid">
+              <div class="info-row"><span class="label">Full name</span><span class="value" id="p-name">—</span></div>
+              <div class="info-row"><span class="label">Date of birth</span><span class="value" id="p-dob">—</span></div>
+              <div class="info-row"><span class="label">Gender</span><span class="value" id="p-gender">—</span></div>
+              <div class="info-row"><span class="label">Form</span><span class="value" id="p-form">—</span></div>
+              <div class="info-row"><span class="label">Previous school</span><span class="value" id="p-prev">—</span></div>
+              <div class="info-row"><span class="label">Admission number</span><span class="value" id="p-admission">—</span></div>
+            </div>
+
+            <div class="info-section-title">Parent / guardian</div>
+            <div class="info-grid">
+              <div class="info-row"><span class="label">Name</span><span class="value" id="p-guardian-name">—</span></div>
+              <div class="info-row"><span class="label">Phone</span><span class="value" id="p-guardian-phone">—</span></div>
+              <div class="info-row"><span class="label">Email</span><span class="value" id="p-guardian-email">—</span></div>
+            </div>
+          </section>
         </section>
+
+        <!-- COURSES VIEW -->
+        <section class="view" id="view-courses">
+          <section class="panel">
+            <h2>Subjects <span id="courses-form-label" class="demo-badge">—</span></h2>
+            <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 14px">Standard subject list for your form. Actual timetable and teacher assignments will be added once the school system is connected.</p>
+            <ul class="course-list" id="course-list"></ul>
+          </section>
+        </section>
+
+        <!-- SETTINGS VIEW -->
+        <section class="view" id="view-settings">
+          <section class="panel">
+            <h2>Account settings</h2>
+            <form class="settings-form" id="password-form">
+              <div class="field">
+                <label>Current password</label>
+                <input name="current_password" type="password" required>
+                <div class="field-error" id="err-current">Incorrect current password.</div>
+              </div>
+              <div class="field">
+                <label>New password</label>
+                <input name="new_password" type="password" required minlength="8">
+                <div class="field-error" id="err-new">At least 8 characters, with a letter and a number.</div>
+              </div>
+              <div class="field">
+                <label>Confirm new password</label>
+                <input name="confirm_password" type="password" required minlength="8">
+                <div class="field-error" id="err-confirm">Passwords do not match.</div>
+              </div>
+              <button type="submit" class="btn btn-primary">Update password</button>
+            </form>
+
+            <div class="danger-zone">
+              <h3>Testing tools</h3>
+              <p>This clears all demo applicant accounts stored in this browser (used while testing — not a real feature for production).</p>
+              <button type="button" class="btn-danger" id="clear-test-data">Clear all test accounts</button>
+            </div>
+          </section>
+        </section>
+
       </section>
       <footer class="foot">&copy; Iyungass</footer>
     </main>
   </div>
+
+  <div id="toast-container"></div>
 
   <script>
     // TEMPORARY local "database" — same table register.html/login.html use.
@@ -63,44 +196,153 @@
     var SESSION_KEY = 'iyungass_current_student';
 
     function loadStudents() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      } catch (err) {
-        return [];
-      }
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch (err) { return []; }
+    }
+    function saveStudents(students) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    }
+    function showToast(message, type) {
+      var container = document.getElementById('toast-container');
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      requestAnimationFrame(function () { toast.classList.add('show'); });
+      setTimeout(function () {
+        toast.classList.remove('show');
+        setTimeout(function () { toast.remove(); }, 200);
+      }, 3000);
     }
 
     var currentAdmissionNumber = localStorage.getItem(SESSION_KEY);
     var students = loadStudents();
-    var student = students.find(function (s) {
-      return s.admissionNumber === currentAdmissionNumber;
-    });
+    var student = students.find(function (s) { return s.admissionNumber === currentAdmissionNumber; });
 
     if (!student) {
-      // Not logged in, or session data missing — send back to login.
       window.location.href = 'login.html';
     } else {
+      var initials = student.name.split(' ').map(function (n) { return n[0]; }).slice(0, 2).join('').toUpperCase();
+      document.getElementById('avatar-initials').textContent = initials;
+      document.getElementById('avatar-initials-2').textContent = initials;
       document.getElementById('account-label').textContent = student.guardianEmail || student.admissionNumber;
-      document.getElementById('profile-name').textContent = student.name;
-      document.getElementById('profile-form').textContent = student.formLevel;
-      document.getElementById('profile-id').textContent = student.admissionNumber;
-      document.getElementById('guardian-name').textContent = student.guardianName || '—';
-      document.getElementById('guardian-phone').textContent = student.guardianPhone || '—';
+
+      // Home
+      document.getElementById('home-name').textContent = student.name;
+      document.getElementById('home-form').textContent = student.formLevel;
+      document.getElementById('home-admission').textContent = student.admissionNumber;
+      document.getElementById('home-avg').textContent = '—';
       document.getElementById('overview-name').textContent = student.name.split(' ')[0];
       document.getElementById('overview-date').textContent = new Date(student.createdAt).toLocaleDateString();
+
+      // Profile
+      document.getElementById('profile-name').textContent = student.name;
+      document.getElementById('profile-admission').textContent = student.admissionNumber;
+      document.getElementById('p-name').textContent = student.name;
+      document.getElementById('p-dob').textContent = student.dob || '—';
+      document.getElementById('p-gender').textContent = student.gender || '—';
+      document.getElementById('p-form').textContent = student.formLevel || '—';
+      document.getElementById('p-prev').textContent = student.prevSchool || '—';
+      document.getElementById('p-admission').textContent = student.admissionNumber;
+      document.getElementById('p-guardian-name').textContent = student.guardianName || '—';
+      document.getElementById('p-guardian-phone').textContent = student.guardianPhone || '—';
+      document.getElementById('p-guardian-email').textContent = student.guardianEmail || '—';
+
+      // Courses (demo subject list by form)
+      var SUBJECTS_BY_FORM = {
+        'Form 1': ['Mathematics', 'English', 'Kiswahili', 'Physics', 'Chemistry', 'Biology', 'Geography', 'Civics'],
+        'Form 2': ['Mathematics', 'English', 'Kiswahili', 'Physics', 'Chemistry', 'Biology', 'Geography', 'History'],
+        'Form 3': ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'Technical Drawing', 'Engineering Science'],
+        'Form 4': ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'Technical Drawing', 'Engineering Science'],
+        'Form 5': ['Advanced Mathematics', 'Physics', 'Chemistry', 'Engineering Science'],
+        'Form 6': ['Advanced Mathematics', 'Physics', 'Chemistry', 'Engineering Science']
+      };
+      var subjects = SUBJECTS_BY_FORM[student.formLevel] || ['Mathematics', 'English', 'Kiswahili', 'Science'];
+      document.getElementById('courses-form-label').textContent = student.formLevel + ' · Demo list';
+      var courseList = document.getElementById('course-list');
+      subjects.forEach(function (subj, i) {
+        var li = document.createElement('li');
+        li.className = 'course-item';
+        li.innerHTML = '<span class="name">' + subj + '</span><span class="code">SUB-' + (i + 1).toString().padStart(2, '0') + '</span>';
+        courseList.appendChild(li);
+      });
     }
 
-    // Sidebar toggle on small screens
+    // ---- View switching (sidebar nav) ----
+    var navLinks = document.querySelectorAll('.sidebar nav a[data-view]');
+    var views = document.querySelectorAll('.view');
+    var titleMap = { home: 'Student Dashboard', profile: 'My Profile', courses: 'My Courses', settings: 'Account Settings' };
+
+    navLinks.forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var target = link.getAttribute('data-view');
+        navLinks.forEach(function (l) { l.classList.remove('active'); });
+        views.forEach(function (v) { v.classList.remove('active'); });
+        link.classList.add('active');
+        document.getElementById('view-' + target).classList.add('active');
+        document.getElementById('page-title').textContent = titleMap[target];
+        if (window.innerWidth <= 900) {
+          document.querySelector('.sidebar').classList.remove('open');
+        }
+      });
+    });
+
+    // ---- Sidebar toggle on small screens ----
     var toggle = document.getElementById('toggle');
     var sidebar = document.querySelector('.sidebar');
     toggle && toggle.addEventListener('click', function () {
       sidebar.classList.toggle('open');
     });
 
-    // Logout
+    // ---- Logout ----
     document.getElementById('logout').addEventListener('click', function () {
       localStorage.removeItem(SESSION_KEY);
       window.location.href = 'login.html';
+    });
+
+    // ---- Change password ----
+    var passRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    document.getElementById('password-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!student) return;
+      var data = new FormData(e.target);
+      var current = data.get('current_password') || '';
+      var next = data.get('new_password') || '';
+      var confirm = data.get('confirm_password') || '';
+
+      var currentInvalid = current !== student.password;
+      var newInvalid = !passRegex.test(next);
+      var confirmInvalid = next !== confirm;
+
+      document.getElementById('err-current').classList.toggle('show', currentInvalid);
+      document.getElementById('err-new').classList.toggle('show', newInvalid);
+      document.getElementById('err-confirm').classList.toggle('show', confirmInvalid);
+
+      if (currentInvalid || newInvalid || confirmInvalid) {
+        showToast('Please fix the errors below.', 'error');
+        return;
+      }
+
+      var allStudents = loadStudents();
+      var idx = allStudents.findIndex(function (s) { return s.admissionNumber === student.admissionNumber; });
+      if (idx > -1) {
+        allStudents[idx].password = next;
+        saveStudents(allStudents);
+        student.password = next;
+      }
+      showToast('Password updated.', 'success');
+      e.target.reset();
+    });
+
+    // ---- Clear test data (testing utility only) ----
+    document.getElementById('clear-test-data').addEventListener('click', function () {
+      if (confirm('This will delete ALL test student accounts stored in this browser. Continue?')) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SESSION_KEY);
+        showToast('Test accounts cleared.', 'success');
+        setTimeout(function () { window.location.href = 'register.html'; }, 1200);
+      }
     });
   </script>
 </body>
