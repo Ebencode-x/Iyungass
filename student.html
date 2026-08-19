@@ -98,8 +98,8 @@
               </div>
             </div>
             <div class="card">
-              <h2>Recent results <span class="demo-badge">Demo data</span></h2>
-              <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 8px">Real results will appear here once exams are marked and the school system is connected.</p>
+              <h2>Recent results</h2>
+              <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 8px">Results will appear here once exams are graded and recorded.</p>
               <div class="stat"><span class="big" id="home-avg">—</span> Average this term</div>
             </div>
             <div class="card">
@@ -146,8 +146,8 @@
         <!-- COURSES VIEW -->
         <section class="view" id="view-courses">
           <section class="panel">
-            <h2>Subjects <span id="courses-form-label" class="demo-badge">—</span></h2>
-            <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 14px">Standard subject list for your form. Actual timetable and teacher assignments will be added once the school system is connected.</p>
+            <h2>Subjects <span id="courses-form-label" style="font-size:12px;font-weight:500;color:var(--muted,#6b7280)"></span></h2>
+            <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 14px">Standard subject list for your form. Timetable and teacher assignments will be added as they're set.</p>
             <ul class="course-list" id="course-list"></ul>
           </section>
         </section>
@@ -155,7 +155,32 @@
         <!-- SETTINGS VIEW -->
         <section class="view" id="view-settings">
           <section class="panel">
-            <h2>Account settings</h2>
+            <h2>Edit profile</h2>
+            <form class="settings-form" id="profile-form">
+              <div class="field">
+                <label>Full name</label>
+                <input name="name" type="text" required>
+              </div>
+              <div class="field">
+                <label>Previous school</label>
+                <input name="prev_school" type="text">
+              </div>
+              <div class="field">
+                <label>Guardian phone</label>
+                <input name="guardian_phone" type="tel" required>
+                <div class="field-error" id="err-profile-phone">Please enter a valid phone number.</div>
+              </div>
+              <div class="field">
+                <label>Guardian email</label>
+                <input name="guardian_email" type="email">
+                <div class="field-error" id="err-profile-email">Please enter a valid email address.</div>
+              </div>
+              <button type="submit" class="btn btn-primary">Save changes</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <h2>Change password</h2>
             <form class="settings-form" id="password-form">
               <div class="field">
                 <label>Current password</label>
@@ -176,9 +201,9 @@
             </form>
 
             <div class="danger-zone">
-              <h3>Testing tools</h3>
-              <p>This clears all demo applicant accounts stored in this browser (used while testing — not a real feature for production).</p>
-              <button type="button" class="btn-danger" id="clear-test-data">Clear all test accounts</button>
+              <h3>Delete account</h3>
+              <p>This permanently removes your application record from the system. This cannot be undone.</p>
+              <button type="button" class="btn-danger" id="delete-account">Delete my account</button>
             </div>
           </section>
         </section>
@@ -248,6 +273,13 @@
       document.getElementById('p-guardian-phone').textContent = student.guardianPhone || '—';
       document.getElementById('p-guardian-email').textContent = student.guardianEmail || '—';
 
+      // Pre-fill edit-profile form
+      var pf = document.getElementById('profile-form');
+      pf.elements['name'].value = student.name;
+      pf.elements['prev_school'].value = student.prevSchool || '';
+      pf.elements['guardian_phone'].value = student.guardianPhone || '';
+      pf.elements['guardian_email'].value = student.guardianEmail || '';
+
       // Courses (demo subject list by form)
       var SUBJECTS_BY_FORM = {
         'Form 1': ['Mathematics', 'English', 'Kiswahili', 'Physics', 'Chemistry', 'Biology', 'Geography', 'Civics'],
@@ -258,7 +290,7 @@
         'Form 6': ['Advanced Mathematics', 'Physics', 'Chemistry', 'Engineering Science']
       };
       var subjects = SUBJECTS_BY_FORM[student.formLevel] || ['Mathematics', 'English', 'Kiswahili', 'Science'];
-      document.getElementById('courses-form-label').textContent = student.formLevel + ' · Demo list';
+      document.getElementById('courses-form-label').textContent = student.formLevel;
       var courseList = document.getElementById('course-list');
       subjects.forEach(function (subj, i) {
         var li = document.createElement('li');
@@ -301,7 +333,43 @@
       window.location.href = 'login.html';
     });
 
-    // ---- Change password ----
+    // ---- Edit profile (Update) ----
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var phoneRegex = /^[0-9+\s-]{7,15}$/;
+    document.getElementById('profile-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!student) return;
+      var data = new FormData(e.target);
+      var newName = (data.get('name') || '').trim();
+      var newPrev = (data.get('prev_school') || '').trim();
+      var newPhone = (data.get('guardian_phone') || '').trim();
+      var newEmail = (data.get('guardian_email') || '').trim();
+
+      var phoneInvalid = !phoneRegex.test(newPhone);
+      var emailInvalid = newEmail.length > 0 && !emailRegex.test(newEmail);
+
+      document.getElementById('err-profile-phone').classList.toggle('show', phoneInvalid);
+      document.getElementById('err-profile-email').classList.toggle('show', emailInvalid);
+
+      if (newName.length === 0 || phoneInvalid || emailInvalid) {
+        showToast('Please fix the errors below.', 'error');
+        return;
+      }
+
+      var allStudents = loadStudents();
+      var idx = allStudents.findIndex(function (s) { return s.admissionNumber === student.admissionNumber; });
+      if (idx > -1) {
+        allStudents[idx].name = newName;
+        allStudents[idx].prevSchool = newPrev;
+        allStudents[idx].guardianPhone = newPhone;
+        allStudents[idx].guardianEmail = newEmail;
+        saveStudents(allStudents);
+      }
+      showToast('Profile updated.', 'success');
+      setTimeout(function () { window.location.reload(); }, 900);
+    });
+
+    // ---- Change password (Update) ----
     var passRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
     document.getElementById('password-form').addEventListener('submit', function (e) {
       e.preventDefault();
@@ -335,12 +403,15 @@
       e.target.reset();
     });
 
-    // ---- Clear test data (testing utility only) ----
-    document.getElementById('clear-test-data').addEventListener('click', function () {
-      if (confirm('This will delete ALL test student accounts stored in this browser. Continue?')) {
-        localStorage.removeItem(STORAGE_KEY);
+    // ---- Delete account (Delete) ----
+    document.getElementById('delete-account').addEventListener('click', function () {
+      if (!student) return;
+      if (confirm('This will permanently delete your account record. Continue?')) {
+        var allStudents = loadStudents();
+        var remaining = allStudents.filter(function (s) { return s.admissionNumber !== student.admissionNumber; });
+        saveStudents(remaining);
         localStorage.removeItem(SESSION_KEY);
-        showToast('Test accounts cleared.', 'success');
+        showToast('Account deleted.', 'success');
         setTimeout(function () { window.location.href = 'register.html'; }, 1200);
       }
     });
