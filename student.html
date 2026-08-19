@@ -4,7 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Dashboard</title>
-  <link rel="stylesheet" href="student.css">
+  <link rel="stylesheet" href="css/student.css">
+  <style>
+    .btn-logout{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;width:100%}
+    .btn-logout:hover{background:rgba(255,255,255,.08)}
+  </style>
 </head>
 <body>
   <div class="page">
@@ -17,54 +21,86 @@
         <a href="#settings">Settings</a>
       </nav>
       <div class="sidebar-footer">
-        <a class="btn" href="register.html">Register</a>
+        <button class="btn-logout" id="logout">Log out</button>
       </div>
     </aside>
-
     <main class="main">
       <header class="topbar">
         <button id="toggle" class="hamburger" aria-label="Toggle menu">☰</button>
         <h1>Student Dashboard</h1>
-        <div class="account">Signed in as <strong>student@example.com</strong></div>
+        <div class="account">Signed in as <strong id="account-label">…</strong></div>
       </header>
-
       <section class="content">
         <section class="cards">
           <div class="card">
             <h2>Profile</h2>
-            <p>Name: <strong>Jane Doe</strong></p>
-            <p>Role: <strong>Student</strong></p>
-            <p>ID: <strong>#123456</strong></p>
+            <p>Name: <strong id="profile-name">—</strong></p>
+            <p>Form: <strong id="profile-form">—</strong></p>
+            <p>Admission No: <strong id="profile-id">—</strong></p>
           </div>
-
           <div class="card">
-            <h2>Progress</h2>
-            <div class="stat"><span class="big">78%</span> Course completion</div>
-            <div class="stat"><span class="big">4</span> Active courses</div>
+            <h2>Guardian</h2>
+            <p>Name: <strong id="guardian-name">—</strong></p>
+            <p>Phone: <strong id="guardian-phone">—</strong></p>
           </div>
-
           <div class="card">
             <h2>Messages</h2>
             <p>No unread messages</p>
           </div>
         </section>
-
         <section class="panel">
           <h2>Overview</h2>
-          <p>Welcome to your personal dashboard. Use the links on the left to navigate. Click Register to open the registration form.</p>
+          <p>Welcome to your personal dashboard, <span id="overview-name">student</span>. Your application was received on <span id="overview-date">—</span>.</p>
         </section>
       </section>
-
       <footer class="foot">&copy; Iyungass</footer>
     </main>
   </div>
 
   <script>
-    // Small script to toggle sidebar on small screens
-    const toggle = document.getElementById('toggle');
-    const sidebar = document.querySelector('.sidebar');
-    toggle && toggle.addEventListener('click', () => {
+    // TEMPORARY local "database" — same table register.html/login.html use.
+    var STORAGE_KEY = 'iyungass_students';
+    var SESSION_KEY = 'iyungass_current_student';
+
+    function loadStudents() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    var currentAdmissionNumber = localStorage.getItem(SESSION_KEY);
+    var students = loadStudents();
+    var student = students.find(function (s) {
+      return s.admissionNumber === currentAdmissionNumber;
+    });
+
+    if (!student) {
+      // Not logged in, or session data missing — send back to login.
+      window.location.href = 'login.html';
+    } else {
+      document.getElementById('account-label').textContent = student.guardianEmail || student.admissionNumber;
+      document.getElementById('profile-name').textContent = student.name;
+      document.getElementById('profile-form').textContent = student.formLevel;
+      document.getElementById('profile-id').textContent = student.admissionNumber;
+      document.getElementById('guardian-name').textContent = student.guardianName || '—';
+      document.getElementById('guardian-phone').textContent = student.guardianPhone || '—';
+      document.getElementById('overview-name').textContent = student.name.split(' ')[0];
+      document.getElementById('overview-date').textContent = new Date(student.createdAt).toLocaleDateString();
+    }
+
+    // Sidebar toggle on small screens
+    var toggle = document.getElementById('toggle');
+    var sidebar = document.querySelector('.sidebar');
+    toggle && toggle.addEventListener('click', function () {
       sidebar.classList.toggle('open');
+    });
+
+    // Logout
+    document.getElementById('logout').addEventListener('click', function () {
+      localStorage.removeItem(SESSION_KEY);
+      window.location.href = 'login.html';
     });
   </script>
 </body>
