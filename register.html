@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admission Application — Iyunga Technical Secondary School</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     .app-wrap{max-width:640px;margin:56px auto;padding:0 20px}
     .app-card{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:10px;padding:32px}
@@ -89,6 +89,22 @@
           </div>
         </div>
 
+        <div class="section-label">Portal access</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Create password</label>
+            <input name="password" type="password" required minlength="8">
+            <div class="field-error" id="err-password">At least 8 characters, with a letter and a number.</div>
+          </div>
+          <div class="field">
+            <label>Confirm password</label>
+            <input name="password_confirm" type="password" required minlength="8">
+            <div class="field-error" id="err-password-confirm">Passwords do not match.</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:#94a3b8;margin:-10px 0 4px">You'll use this password to log in to the student portal once admitted.</p>
+
         <div class="section-label">Parent / guardian details</div>
 
         <div class="field">
@@ -136,6 +152,32 @@
       var form = document.getElementById('reg');
       var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       var phoneRegex = /^[0-9+\s-]{7,15}$/;
+      var passRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+      // ---------------------------------------------------------------
+      // TEMPORARY local "database" using localStorage — this is a stand-in
+      // for a real backend/database. Replace loadStudents/saveStudents with
+      // real API calls once a backend exists.
+      // ---------------------------------------------------------------
+      var STORAGE_KEY = 'iyungass_students';
+
+      function loadStudents() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        } catch (err) {
+          return [];
+        }
+      }
+
+      function saveStudents(students) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+      }
+
+      function generateAdmissionNumber(students) {
+        var year = new Date().getFullYear();
+        var count = students.length + 1;
+        return 'IY-' + year + '-' + String(count).padStart(4, '0');
+      }
 
       function showError(fieldName, errId, condition) {
         var input = form.elements[fieldName];
@@ -175,6 +217,8 @@
         var guardianName = (data.get('guardian_name') || '').trim();
         var guardianPhone = (data.get('guardian_phone') || '').trim();
         var guardianEmail = (data.get('guardian_email') || '').trim();
+        var password = data.get('password') || '';
+        var passwordConfirm = data.get('password_confirm') || '';
         var terms = form.elements['terms'].checked;
 
         var nameInvalid = name.length === 0;
@@ -184,6 +228,8 @@
         var guardianInvalid = guardianName.length === 0;
         var phoneInvalid = !phoneRegex.test(guardianPhone);
         var emailInvalid = guardianEmail.length > 0 && !emailRegex.test(guardianEmail);
+        var passwordInvalid = !passRegex.test(password);
+        var passwordConfirmInvalid = password !== passwordConfirm || passwordConfirm.length === 0;
         var termsInvalid = !terms;
 
         showError('name', 'err-name', nameInvalid);
@@ -193,15 +239,41 @@
         showError('guardian_name', 'err-guardian', guardianInvalid);
         showError('guardian_phone', 'err-phone', phoneInvalid);
         showError('guardian_email', 'err-email', emailInvalid);
+        showError('password', 'err-password', passwordInvalid);
+        showError('password_confirm', 'err-password-confirm', passwordConfirmInvalid);
         showError('terms', 'err-terms', termsInvalid);
 
-        if (nameInvalid || dobInvalid || genderInvalid || formInvalid || guardianInvalid || phoneInvalid || emailInvalid || termsInvalid) {
+        if (nameInvalid || dobInvalid || genderInvalid || formInvalid || guardianInvalid || phoneInvalid || emailInvalid || passwordInvalid || passwordConfirmInvalid || termsInvalid) {
           showToast('Please fix the errors below.', 'error');
           return;
         }
 
-        showToast('Application submitted! (demo — no database connected yet)', 'success');
+        var students = loadStudents();
+        var admissionNumber = generateAdmissionNumber(students);
+
+        students.push({
+          admissionNumber: admissionNumber,
+          name: name,
+          dob: dob,
+          gender: gender,
+          formLevel: formLevel,
+          prevSchool: (data.get('prev_school') || '').trim(),
+          guardianName: guardianName,
+          guardianPhone: guardianPhone,
+          guardianEmail: guardianEmail,
+          // NOTE: plain-text password in localStorage is fine only because this
+          // is a temporary local demo table. A real backend must hash passwords
+          // (e.g. bcrypt) and never store or transmit them in plain text.
+          password: password,
+          createdAt: new Date().toISOString()
+        });
+        saveStudents(students);
+
+        showToast('Application submitted! Your admission number is ' + admissionNumber + ' — save it to log in.', 'success');
         form.reset();
+        setTimeout(function () {
+          window.location.href = 'login.html';
+        }, 3500);
       });
     })();
   </script>

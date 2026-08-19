@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Portal Login — Iyunga Technical Secondary School</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     .app-wrap{max-width:440px;margin:80px auto;padding:0 20px}
     .app-card{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:10px;padding:32px}
@@ -75,6 +75,18 @@
 
       var form = document.getElementById('login');
 
+      // TEMPORARY local "database" — same table register.html writes to.
+      var STORAGE_KEY = 'iyungass_students';
+      var SESSION_KEY = 'iyungass_current_student';
+
+      function loadStudents() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        } catch (err) {
+          return [];
+        }
+      }
+
       function showError(fieldName, errId, condition) {
         var input = form.elements[fieldName];
         var errEl = document.getElementById(errId);
@@ -119,8 +131,23 @@
           return;
         }
 
-        // Demo-only: no backend/database connected yet.
-        showToast('Login is not connected to a database yet — demo only.', 'error');
+        var students = loadStudents();
+        var match = students.find(function (s) {
+          var idMatch = s.admissionNumber.toLowerCase() === identifier.toLowerCase();
+          var emailMatch = s.guardianEmail && s.guardianEmail.toLowerCase() === identifier.toLowerCase();
+          return (idMatch || emailMatch) && s.password === password;
+        });
+
+        if (!match) {
+          showToast('No matching account found. Check your admission number and password.', 'error');
+          return;
+        }
+
+        localStorage.setItem(SESSION_KEY, match.admissionNumber);
+        showToast('Welcome back, ' + match.name + '!', 'success');
+        setTimeout(function () {
+          window.location.href = 'student.html';
+        }, 1200);
       });
     })();
   </script>
