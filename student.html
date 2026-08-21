@@ -4,62 +4,66 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Dashboard — Iyunga Technical Secondary School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/student.css">
   <style>
     /* ---- Layout refinements ---- */
     .sidebar nav a[data-view]{cursor:pointer}
-    .btn-logout{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;width:100%}
-    .btn-logout:hover{background:rgba(255,255,255,.08)}
+    .btn-logout{background:transparent;border:1px solid rgba(245,242,234,.25);color:var(--bg-page);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;width:100%;font-family:var(--font-mono)}
+    .btn-logout:hover{background:rgba(245,242,234,.08)}
 
     .view{display:none}
     .view.active{display:block}
 
     /* ---- Profile card ---- */
     .profile-card{display:flex;gap:16px;align-items:center;margin-bottom:18px}
-    .avatar{width:56px;height:56px;border-radius:50%;background:var(--accent,#2b7cff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0}
+    .avatar{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0}
     .profile-id h3{margin:0 0 2px;font-size:17px}
-    .profile-id .muted{color:var(--muted,#6b7280);font-size:13px}
+    .profile-id .muted{color:var(--text-muted);font-size:13px}
 
     .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}
-    .info-row{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid rgba(15,23,42,.06)}
-    .info-row .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#6b7280)}
-    .info-row .value{font-size:14px;font-weight:600;color:#0f172a}
-    .info-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#6b7280);margin:18px 0 6px}
+    .info-row{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .info-row .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+    .info-row .value{font-size:14px;font-weight:600;color:var(--text-main)}
+    .info-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin:18px 0 6px}
     .info-section-title:first-child{margin-top:0}
 
     /* ---- Results / notifications ---- */
-    .demo-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:999px;margin-left:8px}
+    .demo-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted);background:var(--border);padding:2px 8px;border-radius:999px;margin-left:8px}
     .result-list{list-style:none;margin:0;padding:0}
-    .result-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(15,23,42,.06)}
+    .result-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
     .result-item:last-child{border-bottom:none}
     .result-subject{font-weight:600;font-size:14px}
-    .result-meta{font-size:12px;color:var(--muted,#6b7280)}
-    .result-grade{font-weight:700;font-size:15px;padding:4px 10px;border-radius:6px;background:#dcfce7;color:#16a34a}
+    .result-meta{font-size:12px;color:var(--text-muted)}
+    .result-grade{font-weight:700;font-size:15px;padding:4px 10px;border-radius:6px;background:rgba(178,58,34,.1);color:var(--accent)}
 
     /* ---- Courses ---- */
     .course-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-    .course-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid rgba(15,23,42,.08);border-radius:8px}
+    .course-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:8px}
     .course-item .name{font-weight:600;font-size:14px}
-    .course-item .code{font-size:12px;color:var(--muted,#6b7280)}
+    .course-item .code{font-size:12px;color:var(--text-muted);font-family:var(--font-mono)}
 
     /* ---- Settings ---- */
     .settings-form .field{margin-bottom:14px;max-width:340px}
     .settings-form label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
-    .settings-form input{width:100%;padding:9px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px}
-    .settings-form .field-error{color:#dc2626;font-size:12px;margin-top:4px;display:none}
+    .settings-form input{width:100%;padding:9px 10px;border-radius:6px;border:1px solid var(--border);font-size:14px;font-family:inherit}
+    .settings-form .field-error{color:var(--accent);font-size:12px;margin-top:4px;display:none}
     .settings-form .field-error.show{display:block}
 
-    .danger-zone{margin-top:28px;padding-top:18px;border-top:1px dashed #cbd5e1}
-    .danger-zone h3{font-size:13px;color:#dc2626;margin:0 0 6px}
-    .danger-zone p{font-size:12px;color:var(--muted,#6b7280);margin:0 0 10px}
-    .btn-danger{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer}
-    .btn-danger:hover{background:#fecaca}
+    .danger-zone{margin-top:28px;padding-top:18px;border-top:1px dashed var(--border)}
+    .danger-zone h3{font-size:13px;color:var(--accent);margin:0 0 6px}
+    .danger-zone p{font-size:12px;color:var(--text-muted);margin:0 0 10px}
+    .btn-danger{background:rgba(178,58,34,.08);color:var(--accent);border:1px solid rgba(178,58,34,.25);padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--font-mono)}
+    .btn-danger:hover{background:rgba(178,58,34,.16)}
 
     #toast-container{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:1000}
-    .toast{padding:12px 16px;border-radius:8px;color:#fff;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateX(20px);transition:opacity .2s ease,transform .2s ease}
+    .toast{padding:12px 16px;border-radius:8px;color:var(--accent-text);font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateX(20px);transition:opacity .2s ease,transform .2s ease}
     .toast.show{opacity:1;transform:translateX(0)}
-    .toast.success{background:#16a34a}
-    .toast.error{background:#dc2626}
+    .toast.success{background:var(--bg-header)}
+    .toast.error{background:var(--accent)}
   </style>
 </head>
 <body>
@@ -99,7 +103,7 @@
             </div>
             <div class="card">
               <h2>Recent results</h2>
-              <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 8px">Results will appear here once exams are graded and recorded.</p>
+              <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">Results will appear here once exams are graded and recorded.</p>
               <div class="stat"><span class="big" id="home-avg">—</span> Average this term</div>
             </div>
             <div class="card">
@@ -146,8 +150,8 @@
         <!-- COURSES VIEW -->
         <section class="view" id="view-courses">
           <section class="panel">
-            <h2>Subjects <span id="courses-form-label" style="font-size:12px;font-weight:500;color:var(--muted,#6b7280)"></span></h2>
-            <p style="font-size:13px;color:var(--muted,#6b7280);margin:0 0 14px">Standard subject list for your form. Timetable and teacher assignments will be added as they're set.</p>
+            <h2>Subjects <span id="courses-form-label" style="font-size:12px;font-weight:500;color:var(--text-muted)"></span></h2>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 14px">Standard subject list for your form. Timetable and teacher assignments will be added as they're set.</p>
             <ul class="course-list" id="course-list"></ul>
           </section>
         </section>
