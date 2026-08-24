@@ -165,6 +165,7 @@
 
   <div id="toast-container"></div>
 
+  <script src="js/config.js"></script>
   <script>
     (function () {
       'use strict';
@@ -173,31 +174,6 @@
       var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       var phoneRegex = /^[0-9+\s-]{7,15}$/;
       var passRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
-
-      // ---------------------------------------------------------------
-      // TEMPORARY local "database" using localStorage — this is a stand-in
-      // for a real backend/database. Replace loadStudents/saveStudents with
-      // real API calls once a backend exists.
-      // ---------------------------------------------------------------
-      var STORAGE_KEY = 'iyungass_students';
-
-      function loadStudents() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        } catch (err) {
-          return [];
-        }
-      }
-
-      function saveStudents(students) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
-      }
-
-      function generateAdmissionNumber(students) {
-        var year = new Date().getFullYear();
-        var count = students.length + 1;
-        return 'IY-' + year + '-' + String(count).padStart(4, '0');
-      }
 
       function showError(fieldName, errId, condition) {
         var input = form.elements[fieldName];
@@ -228,6 +204,7 @@
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+        var submitBtn = form.querySelector('button[type="submit"]');
         var data = new FormData(form);
 
         var name = (data.get('name') || '').trim();
@@ -268,39 +245,53 @@
           return;
         }
 
-        var students = loadStudents();
-        var admissionNumber = generateAdmissionNumber(students);
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting…';
 
-        students.push({
-          admissionNumber: admissionNumber,
-          name: name,
-          dob: dob,
-          gender: gender,
-          formLevel: formLevel,
-          prevSchool: (data.get('prev_school') || '').trim(),
-          guardianName: guardianName,
-          guardianPhone: guardianPhone,
-          guardianEmail: guardianEmail,
-          // NOTE: plain-text password in localStorage is fine only because this
-          // is a temporary local demo table. A real backend must hash passwords
-          // (e.g. bcrypt) and never store or transmit them in plain text.
-          password: password,
-          createdAt: new Date().toISOString()
-        });
-        saveStudents(students);
+        fetch(API_BASE + '/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            dob: dob,
+            gender: gender,
+            form_level: formLevel,
+            prev_school: (data.get('prev_school') || '').trim(),
+            guardian_name: guardianName,
+            guardian_phone: guardianPhone,
+            guardian_email: guardianEmail,
+            password: password
+          })
+        })
+          .then(function (res) {
+            return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+          })
+          .then(function (result) {
+            if (!result.ok) {
+              throw new Error(result.body.error || 'Could not submit application.');
+            }
+            var admissionNumber = result.body.student.admission_number;
 
-        showToast('Application submitted! Save your admission number below.', 'success');
-        form.style.display = 'none';
-        document.getElementById('login-note').style.display = 'none';
-        document.getElementById('admission-number-display').textContent = admissionNumber;
-        document.getElementById('app-success').style.display = 'block';
+            showToast('Application submitted! Save your admission number below.', 'success');
+            form.style.display = 'none';
+            document.getElementById('login-note').style.display = 'none';
+            document.getElementById('admission-number-display').textContent = admissionNumber;
+            document.getElementById('app-success').style.display = 'block';
 
-        var copyBtn = document.getElementById('copy-admission');
-        copyBtn.addEventListener('click', function () {
-          navigator.clipboard.writeText(admissionNumber).then(function () {
-            showToast('Admission number copied.', 'success');
+            var copyBtn = document.getElementById('copy-admission');
+            copyBtn.addEventListener('click', function () {
+              navigator.clipboard.writeText(admissionNumber).then(function () {
+                showToast('Admission number copied.', 'success');
+              });
+            });
+          })
+          .catch(function (err) {
+            showToast(err.message, 'error');
+          })
+          .finally(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit application';
           });
-        });
       });
     })();
   </script>

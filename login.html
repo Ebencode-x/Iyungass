@@ -72,23 +72,13 @@
 
   <div id="toast-container"></div>
 
+  <script src="js/config.js"></script>
   <script>
     (function () {
       'use strict';
 
       var form = document.getElementById('login');
-
-      // TEMPORARY local "database" — same table register.html writes to.
-      var STORAGE_KEY = 'iyungass_students';
       var SESSION_KEY = 'iyungass_current_student';
-
-      function loadStudents() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        } catch (err) {
-          return [];
-        }
-      }
 
       function showError(fieldName, errId, condition) {
         var input = form.elements[fieldName];
@@ -119,6 +109,7 @@
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
+        var submitBtn = form.querySelector('button[type="submit"]');
         var data = new FormData(form);
         var identifier = (data.get('identifier') || '').trim();
         var password = data.get('password') || '';
@@ -134,23 +125,32 @@
           return;
         }
 
-        var students = loadStudents();
-        var match = students.find(function (s) {
-          var idMatch = s.admissionNumber.toLowerCase() === identifier.toLowerCase();
-          var emailMatch = s.guardianEmail && s.guardianEmail.toLowerCase() === identifier.toLowerCase();
-          return (idMatch || emailMatch) && s.password === password;
-        });
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Logging in…';
 
-        if (!match) {
-          showToast('No matching account found. Check your admission number and password.', 'error');
-          return;
-        }
-
-        localStorage.setItem(SESSION_KEY, match.admissionNumber);
-        showToast('Welcome back, ' + match.name + '!', 'success');
-        setTimeout(function () {
-          window.location.href = 'student.html';
-        }, 1200);
+        fetch(API_BASE + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: identifier, password: password })
+        })
+          .then(function (res) {
+            return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+          })
+          .then(function (result) {
+            if (!result.ok) {
+              throw new Error(result.body.error || 'Login failed.');
+            }
+            localStorage.setItem(SESSION_KEY, result.body.student.admission_number);
+            showToast('Welcome back, ' + result.body.student.name + '!', 'success');
+            setTimeout(function () {
+              window.location.href = 'student.html';
+            }, 1200);
+          })
+          .catch(function (err) {
+            showToast(err.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Log in';
+          });
       });
     })();
   </script>

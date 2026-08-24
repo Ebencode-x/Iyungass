@@ -219,18 +219,10 @@
 
   <div id="toast-container"></div>
 
+  <script src="js/config.js"></script>
   <script>
-    // TEMPORARY local "database" — same table register.html/login.html use.
-    var STORAGE_KEY = 'iyungass_students';
     var SESSION_KEY = 'iyungass_current_student';
 
-    function loadStudents() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch (err) { return []; }
-    }
-    function saveStudents(students) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
-    }
     function showToast(message, type) {
       var container = document.getElementById('toast-container');
       var toast = document.createElement('div');
@@ -245,46 +237,61 @@
     }
 
     var currentAdmissionNumber = localStorage.getItem(SESSION_KEY);
-    var students = loadStudents();
-    var student = students.find(function (s) { return s.admissionNumber === currentAdmissionNumber; });
+    var student = null;
 
-    if (!student) {
+    if (!currentAdmissionNumber) {
       window.location.href = 'login.html';
     } else {
+      fetch(API_BASE + '/api/students/' + encodeURIComponent(currentAdmissionNumber))
+        .then(function (res) {
+          if (!res.ok) { throw new Error('not found'); }
+          return res.json();
+        })
+        .then(function (data) {
+          student = data;
+          renderStudent(student);
+        })
+        .catch(function () {
+          localStorage.removeItem(SESSION_KEY);
+          window.location.href = 'login.html';
+        });
+    }
+
+    function renderStudent(student) {
       var initials = student.name.split(' ').map(function (n) { return n[0]; }).slice(0, 2).join('').toUpperCase();
       document.getElementById('avatar-initials').textContent = initials;
       document.getElementById('avatar-initials-2').textContent = initials;
-      document.getElementById('account-label').textContent = student.guardianEmail || student.admissionNumber;
+      document.getElementById('account-label').textContent = student.guardian_email || student.admission_number;
 
       // Home
       document.getElementById('home-name').textContent = student.name;
-      document.getElementById('home-form').textContent = student.formLevel;
-      document.getElementById('home-admission').textContent = student.admissionNumber;
+      document.getElementById('home-form').textContent = student.form_level;
+      document.getElementById('home-admission').textContent = student.admission_number;
       document.getElementById('home-avg').textContent = '—';
       document.getElementById('overview-name').textContent = student.name.split(' ')[0];
-      document.getElementById('overview-date').textContent = new Date(student.createdAt).toLocaleDateString();
+      document.getElementById('overview-date').textContent = new Date(student.created_at).toLocaleDateString();
 
       // Profile
       document.getElementById('profile-name').textContent = student.name;
-      document.getElementById('profile-admission').textContent = student.admissionNumber;
+      document.getElementById('profile-admission').textContent = student.admission_number;
       document.getElementById('p-name').textContent = student.name;
       document.getElementById('p-dob').textContent = student.dob || '—';
       document.getElementById('p-gender').textContent = student.gender || '—';
-      document.getElementById('p-form').textContent = student.formLevel || '—';
-      document.getElementById('p-prev').textContent = student.prevSchool || '—';
-      document.getElementById('p-admission').textContent = student.admissionNumber;
-      document.getElementById('p-guardian-name').textContent = student.guardianName || '—';
-      document.getElementById('p-guardian-phone').textContent = student.guardianPhone || '—';
-      document.getElementById('p-guardian-email').textContent = student.guardianEmail || '—';
+      document.getElementById('p-form').textContent = student.form_level || '—';
+      document.getElementById('p-prev').textContent = student.prev_school || '—';
+      document.getElementById('p-admission').textContent = student.admission_number;
+      document.getElementById('p-guardian-name').textContent = student.guardian_name || '—';
+      document.getElementById('p-guardian-phone').textContent = student.guardian_phone || '—';
+      document.getElementById('p-guardian-email').textContent = student.guardian_email || '—';
 
       // Pre-fill edit-profile form
       var pf = document.getElementById('profile-form');
       pf.elements['name'].value = student.name;
-      pf.elements['prev_school'].value = student.prevSchool || '';
-      pf.elements['guardian_phone'].value = student.guardianPhone || '';
-      pf.elements['guardian_email'].value = student.guardianEmail || '';
+      pf.elements['prev_school'].value = student.prev_school || '';
+      pf.elements['guardian_phone'].value = student.guardian_phone || '';
+      pf.elements['guardian_email'].value = student.guardian_email || '';
 
-      // Courses (demo subject list by form)
+      // Courses (demo subject list by form — not stored in the database)
       var SUBJECTS_BY_FORM = {
         'Form 1': ['Mathematics', 'English', 'Kiswahili', 'Physics', 'Chemistry', 'Biology', 'Geography', 'Civics'],
         'Form 2': ['Mathematics', 'English', 'Kiswahili', 'Physics', 'Chemistry', 'Biology', 'Geography', 'History'],
@@ -293,9 +300,10 @@
         'Form 5': ['Advanced Mathematics', 'Physics', 'Chemistry', 'Engineering Science'],
         'Form 6': ['Advanced Mathematics', 'Physics', 'Chemistry', 'Engineering Science']
       };
-      var subjects = SUBJECTS_BY_FORM[student.formLevel] || ['Mathematics', 'English', 'Kiswahili', 'Science'];
-      document.getElementById('courses-form-label').textContent = student.formLevel;
+      var subjects = SUBJECTS_BY_FORM[student.form_level] || ['Mathematics', 'English', 'Kiswahili', 'Science'];
+      document.getElementById('courses-form-label').textContent = student.form_level;
       var courseList = document.getElementById('course-list');
+      courseList.innerHTML = '';
       subjects.forEach(function (subj, i) {
         var li = document.createElement('li');
         li.className = 'course-item';
@@ -360,17 +368,25 @@
         return;
       }
 
-      var allStudents = loadStudents();
-      var idx = allStudents.findIndex(function (s) { return s.admissionNumber === student.admissionNumber; });
-      if (idx > -1) {
-        allStudents[idx].name = newName;
-        allStudents[idx].prevSchool = newPrev;
-        allStudents[idx].guardianPhone = newPhone;
-        allStudents[idx].guardianEmail = newEmail;
-        saveStudents(allStudents);
-      }
-      showToast('Profile updated.', 'success');
-      setTimeout(function () { window.location.reload(); }, 900);
+      fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName,
+          prev_school: newPrev,
+          guardian_phone: newPhone,
+          guardian_email: newEmail
+        })
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (!result.ok) { throw new Error(result.body.error || 'Could not update profile.'); }
+          showToast('Profile updated.', 'success');
+          setTimeout(function () { window.location.reload(); }, 900);
+        })
+        .catch(function (err) { showToast(err.message, 'error'); });
     });
 
     // ---- Change password (Update) ----
@@ -383,40 +399,57 @@
       var next = data.get('new_password') || '';
       var confirm = data.get('confirm_password') || '';
 
-      var currentInvalid = current !== student.password;
       var newInvalid = !passRegex.test(next);
       var confirmInvalid = next !== confirm;
 
-      document.getElementById('err-current').classList.toggle('show', currentInvalid);
+      document.getElementById('err-current').classList.remove('show');
       document.getElementById('err-new').classList.toggle('show', newInvalid);
       document.getElementById('err-confirm').classList.toggle('show', confirmInvalid);
 
-      if (currentInvalid || newInvalid || confirmInvalid) {
+      if (newInvalid || confirmInvalid) {
         showToast('Please fix the errors below.', 'error');
         return;
       }
 
-      var allStudents = loadStudents();
-      var idx = allStudents.findIndex(function (s) { return s.admissionNumber === student.admissionNumber; });
-      if (idx > -1) {
-        allStudents[idx].password = next;
-        saveStudents(allStudents);
-        student.password = next;
-      }
-      showToast('Password updated.', 'success');
-      e.target.reset();
+      fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number) + '/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: current, new_password: next })
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            var msg = result.body.error || 'Could not update password.';
+            if (msg.toLowerCase().indexOf('current password') > -1) {
+              document.getElementById('err-current').classList.add('show');
+            }
+            throw new Error(msg);
+          }
+          showToast('Password updated.', 'success');
+          e.target.reset();
+        })
+        .catch(function (err) { showToast(err.message, 'error'); });
     });
 
     // ---- Delete account (Delete) ----
     document.getElementById('delete-account').addEventListener('click', function () {
       if (!student) return;
       if (confirm('This will permanently delete your account record. Continue?')) {
-        var allStudents = loadStudents();
-        var remaining = allStudents.filter(function (s) { return s.admissionNumber !== student.admissionNumber; });
-        saveStudents(remaining);
-        localStorage.removeItem(SESSION_KEY);
-        showToast('Account deleted.', 'success');
-        setTimeout(function () { window.location.href = 'register.html'; }, 1200);
+        fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number), {
+          method: 'DELETE'
+        })
+          .then(function (res) {
+            return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+          })
+          .then(function (result) {
+            if (!result.ok) { throw new Error(result.body.error || 'Could not delete account.'); }
+            localStorage.removeItem(SESSION_KEY);
+            showToast('Account deleted.', 'success');
+            setTimeout(function () { window.location.href = 'register.html'; }, 1200);
+          })
+          .catch(function (err) { showToast(err.message, 'error'); });
       }
     });
   </script>
