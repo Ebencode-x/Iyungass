@@ -5,12 +5,15 @@ from models import db, Student
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
+
+NECTA_CENTER = "S0112"
+
 def generate_admission_number():
     year = datetime.utcnow().year
     count = Student.query.filter(
-        Student.admission_number.like(f"IY-{year}-%")
+        Student.admission_number.like(f"{year}-{NECTA_CENTER}-%")
     ).count() + 1
-    return f"IY-{year}-{count:04d}"
+    return f"{year}-{NECTA_CENTER}-{count:05d}"
 
 
 @auth_bp.post("/register")
