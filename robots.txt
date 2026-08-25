@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /register.html
+Disallow: /login.html
+Disallow: /student.html
+
+Sitemap: https://iyungass.vercel.app/sitemap.xml
