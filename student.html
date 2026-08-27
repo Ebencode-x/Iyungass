@@ -248,7 +248,7 @@
     if (!currentAdmissionNumber) {
       window.location.href = 'login.html';
     } else {
-      fetch(API_BASE + '/api/students/' + encodeURIComponent(currentAdmissionNumber))
+      fetch(API_BASE + '/api/students/' + encodeURIComponent(currentAdmissionNumber), { headers: { 'ngrok-skip-browser-warning': 'true' } })
         .then(function (res) {
           if (!res.ok) { throw new Error('not found'); }
           return res.json();
@@ -376,7 +376,7 @@
 
       fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({
           name: newName,
           prev_school: newPrev,
@@ -419,7 +419,7 @@
 
       fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number) + '/password', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
         body: JSON.stringify({ current_password: current, new_password: next })
       })
         .then(function (res) {
@@ -444,7 +444,7 @@
       if (!student) return;
       if (confirm('This will permanently delete your account record. Continue?')) {
         fetch(API_BASE + '/api/students/' + encodeURIComponent(student.admission_number), {
-          method: 'DELETE'
+          method: 'DELETE', headers: { 'ngrok-skip-browser-warning': 'true' }
         })
           .then(function (res) {
             return res.json().then(function (body) { return { ok: res.ok, body: body }; });
