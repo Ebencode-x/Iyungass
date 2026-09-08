@@ -5,7 +5,8 @@ from config import Config
 from models import db
 from routes.auth import auth_bp
 from routes.students import students_bp
-
+from routes.export import export_bp
+from routes.admin import admin_bp
 
 def create_app():
     app = Flask(__name__)
@@ -16,6 +17,8 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(students_bp)
+    app.register_blueprint(export_bp)
+    app.register_blueprint(admin_bp)
 
     @app.get("/api/health")
     def health():
