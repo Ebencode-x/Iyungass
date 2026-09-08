@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — Iyunga Technical Secondary School</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/student.css">
+  <style>
+    .btn-logout{background:transparent;border:1px solid rgba(245,242,234,.25);color:var(--bg-page);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;width:100%;font-family:var(--font-mono)}
+    .btn-logout:hover{background:rgba(245,242,234,.08)}
+
+    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+    .toolbar select{padding:8px 10px;border-radius:6px;border:1px solid var(--border);font-size:13px;font-family:inherit}
+    .toolbar .spacer{flex:1}
+    .btn-export{background:transparent;border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--font-mono);text-decoration:none;color:var(--text-main);display:inline-flex;align-items:center;gap:6px}
+    .btn-export:hover{background:var(--border)}
+
+    table.students-table{width:100%;border-collapse:collapse;font-size:13px}
+    table.students-table th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+    table.students-table td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+    table.students-table tr:last-child td{border-bottom:none}
+
+    .status-pill{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px}
+    .status-pill.pending{background:rgba(178,58,34,.08);color:var(--accent)}
+    .status-pill.approved{background:rgba(34,139,34,.12);color:#1e7a1e}
+    .status-pill.rejected{background:rgba(120,120,120,.15);color:#666}
+
+    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .row-actions button{font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;font-family:var(--font-mono)}
+    .row-actions button.approve:hover{background:rgba(34,139,34,.12)}
+    .row-actions button.reject:hover{background:rgba(120,120,120,.15)}
+    .row-actions button.delete{color:var(--accent);border-color:rgba(178,58,34,.25)}
+    .row-actions button.delete:hover{background:rgba(178,58,34,.1)}
+
+    .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px}
+    #toast-container{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:1000}
+    .toast{padding:12px 16px;border-radius:8px;color:var(--accent-text);font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;transform:translateX(20px);transition:opacity .2s ease,transform .2s ease}
+    .toast.show{opacity:1;transform:translateX(0)}
+    .toast.success{background:var(--bg-header)}
+    .toast.error{background:var(--accent)}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <div class="brand">Iyungass Admin</div>
+      <nav>
+        <a href="#" data-view="applications" class="active">Applications</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="logout">Log out</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <button id="toggle" class="hamburger" aria-label="Toggle menu">☰</button>
+        <h1 id="page-title">Student Applications</h1>
+        <div class="account">Signed in as <strong id="account-label">…</strong></div>
+      </header>
+
+      <section class="content">
+        <section class="view active" id="view-applications">
+          <section class="panel">
+            <div class="toolbar">
+              <select id="status-filter">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <div class="spacer"></div>
+              <a class="btn-export" id="export-pdf" href="#" target="_blank">⬇ PDF</a>
+              <a class="btn-export" id="export-xlsx" href="#" target="_blank">⬇ Excel</a>
+            </div>
+
+            <table class="students-table" id="students-table">
+              <thead>
+                <tr>
+                  <th>Admission No.</th>
+                  <th>Name</th>
+                  <th>Form</th>
+                  <th>Guardian</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-tbody"></tbody>
+            </table>
+            <div class="empty-state" id="empty-state" style="display:none">No applications match this filter.</div>
+          </section>
+        </section>
+      </section>
+      <footer class="foot">&copy; Iyungass Admin</footer>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/config.js"></script>
+  <script>
+    var ADMIN_SESSION_KEY = 'iyungass_current_admin';
+    var admin = null;
+
+    function showToast(message, type) {
+      var container = document.getElementById('toast-container');
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      requestAnimationFrame(function () { toast.classList.add('show'); });
+      setTimeout(function () {
+        toast.classList.remove('show');
+        setTimeout(function () { toast.remove(); }, 200);
+      }, 3000);
+    }
+
+    var rawAdmin = localStorage.getItem(ADMIN_SESSION_KEY);
+    if (!rawAdmin) {
+      window.location.href = 'admin-login.html';
+    } else {
+      admin = JSON.parse(rawAdmin);
+      document.getElementById('account-label').textContent = admin.name || admin.username;
+      updateExportLinks();
+      loadStudents('');
+    }
+
+    function updateExportLinks() {
+      document.getElementById('export-pdf').href = API_BASE + '/api/export/students/pdf';
+      document.getElementById('export-xlsx').href = API_BASE + '/api/export/students/xlsx';
+    }
+
+    function loadStudents(statusFilter) {
+      var url = API_BASE + '/api/admin/students';
+      if (statusFilter) { url += '?status=' + encodeURIComponent(statusFilter); }
+
+      fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+        .then(function (res) {
+          if (!res.ok) { throw new Error('Could not load applications.'); }
+          return res.json();
+        })
+        .then(renderStudents)
+        .catch(function (err) { showToast(err.message, 'error'); });
+    }
+
+    function renderStudents(students) {
+      var tbody = document.getElementById('students-tbody');
+      var emptyState = document.getElementById('empty-state');
+      tbody.innerHTML = '';
+
+      if (!students.length) {
+        emptyState.style.display = 'block';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      students.forEach(function (s) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + s.admission_number + '</td>' +
+          '<td>' + s.name + '</td>' +
+          '<td>' + (s.form_level || '—') + '</td>' +
+          '<td>' + (s.guardian_name || '—') + '<br><span style="color:var(--text-muted);font-size:11px">' + (s.guardian_phone || '') + '</span></td>' +
+          '<td><span class="status-pill ' + s.status + '">' + s.status + '</span></td>' +
+          '<td class="row-actions">' +
+            '<button class="approve" data-adm="' + s.admission_number + '" data-status="approved">Approve</button>' +
+            '<button class="reject" data-adm="' + s.admission_number + '" data-status="rejected">Reject</button>' +
+            '<button class="delete" data-adm="' + s.admission_number + '">Delete</button>' +
+          '</td>';
+        tbody.appendChild(tr);
+      });
+
+      // Wire approve/reject buttons
+      tbody.querySelectorAll('button.approve, button.reject').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          updateStatus(btn.getAttribute('data-adm'), btn.getAttribute('data-status'));
+        });
+      });
+
+      // Wire delete buttons
+      tbody.querySelectorAll('button.delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var adm = btn.getAttribute('data-adm');
+          if (confirm('Permanently delete application ' + adm + '? This cannot be undone.')) {
+            deleteApplication(adm);
+          }
+        });
+      });
+    }
+
+    function updateStatus(admissionNumber, newStatus) {
+      fetch(API_BASE + '/api/admin/students/' + encodeURIComponent(admissionNumber) + '/status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ status: newStatus })
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (!result.ok) { throw new Error(result.body.error || 'Could not update status.'); }
+          showToast('Application ' + newStatus + '.', 'success');
+          loadStudents(document.getElementById('status-filter').value);
+        })
+        .catch(function (err) { showToast(err.message, 'error'); });
+    }
+
+    function deleteApplication(admissionNumber) {
+      fetch(API_BASE + '/api/admin/students/' + encodeURIComponent(admissionNumber), {
+        method: 'DELETE', headers: { 'ngrok-skip-browser-warning': 'true' }
+      })
+        .then(function (res) {
+          return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+        })
+        .then(function (result) {
+          if (!result.ok) { throw new Error(result.body.error || 'Could not delete application.'); }
+          showToast('Application deleted.', 'success');
+          loadStudents(document.getElementById('status-filter').value);
+        })
+        .catch(function (err) { showToast(err.message, 'error'); });
+    }
+
+    document.getElementById('status-filter').addEventListener('change', function (e) {
+      loadStudents(e.target.value);
+    });
+
+    document.getElementById('logout').addEventListener('click', function () {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      window.location.href = 'admin-login.html';
+    });
+
+    // Sidebar toggle on small screens
+    var toggle = document.getElementById('toggle');
+    var sidebar = document.querySelector('.sidebar');
+    toggle && toggle.addEventListener('click', function () {
+      sidebar.classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
