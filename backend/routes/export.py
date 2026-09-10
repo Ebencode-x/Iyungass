@@ -7,6 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 
 from models import Student
+from auth_utils import admin_required
 
 export_bp = Blueprint("export", __name__, url_prefix="/api/export")
 
@@ -26,6 +27,7 @@ def _student_rows():
 
 
 @export_bp.get("/students/pdf")
+@admin_required
 def export_students_pdf():
     rows = _student_rows()
     headers = [label for _, label in STUDENT_COLUMNS]
@@ -56,6 +58,7 @@ def export_students_pdf():
 
 
 @export_bp.get("/students/xlsx")
+@admin_required
 def export_students_xlsx():
     rows = _student_rows()
     headers = [label for _, label in STUDENT_COLUMNS]

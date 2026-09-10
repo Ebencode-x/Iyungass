@@ -102,7 +102,9 @@
   <script src="js/config.js"></script>
   <script>
     var ADMIN_SESSION_KEY = 'iyungass_current_admin';
+    var ADMIN_TOKEN_KEY = 'iyungass_admin_token';
     var admin = null;
+    var token = null;
 
     function showToast(message, type) {
       var container = document.getElementById('toast-container');
@@ -117,32 +119,70 @@
       }, 3000);
     }
 
-    var rawAdmin = localStorage.getItem(ADMIN_SESSION_KEY);
-    if (!rawAdmin) {
+    function authHeaders(extra) {
+      var headers = { 'ngrok-skip-browser-warning': 'true', 'Authorization': 'Bearer ' + token };
+      if (extra) { for (var k in extra) { headers[k] = extra[k]; } }
+      return headers;
+    }
+
+    function forceLogout(message) {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      if (message) { sessionStorage.setItem('iyungass_admin_notice', message); }
       window.location.href = 'admin-login.html';
+    }
+
+    var rawAdmin = localStorage.getItem(ADMIN_SESSION_KEY);
+    token = localStorage.getItem(ADMIN_TOKEN_KEY);
+    if (!rawAdmin || !token) {
+      forceLogout();
     } else {
       admin = JSON.parse(rawAdmin);
       document.getElementById('account-label').textContent = admin.name || admin.username;
-      updateExportLinks();
       loadStudents('');
     }
 
-    function updateExportLinks() {
-      document.getElementById('export-pdf').href = API_BASE + '/api/export/students/pdf';
-      document.getElementById('export-xlsx').href = API_BASE + '/api/export/students/xlsx';
+    function downloadExport(path, filename) {
+      fetch(API_BASE + path, { headers: authHeaders() })
+        .then(function (res) {
+          if (res.status === 401) { forceLogout('Session expired, please log in again.'); throw new Error('Unauthorized'); }
+          if (!res.ok) { throw new Error('Export failed.'); }
+          return res.blob();
+        })
+        .then(function (blob) {
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(function (err) { if (err.message !== 'Unauthorized') { showToast(err.message, 'error'); } });
     }
+
+    document.getElementById('export-pdf').addEventListener('click', function (e) {
+      e.preventDefault();
+      downloadExport('/api/export/students/pdf', 'students_report.pdf');
+    });
+    document.getElementById('export-xlsx').addEventListener('click', function (e) {
+      e.preventDefault();
+      downloadExport('/api/export/students/xlsx', 'students_report.xlsx');
+    });
 
     function loadStudents(statusFilter) {
       var url = API_BASE + '/api/admin/students';
       if (statusFilter) { url += '?status=' + encodeURIComponent(statusFilter); }
 
-      fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      fetch(url, { headers: authHeaders() })
         .then(function (res) {
+          if (res.status === 401) { forceLogout('Session expired, please log in again.'); throw new Error('Unauthorized'); }
           if (!res.ok) { throw new Error('Could not load applications.'); }
           return res.json();
         })
         .then(renderStudents)
-        .catch(function (err) { showToast(err.message, 'error'); });
+        .catch(function (err) { if (err.message !== 'Unauthorized') { showToast(err.message, 'error'); } });
     }
 
     function renderStudents(students) {
@@ -193,10 +233,11 @@
     function updateStatus(admissionNumber, newStatus) {
       fetch(API_BASE + '/api/admin/students/' + encodeURIComponent(admissionNumber) + '/status', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ status: newStatus })
       })
         .then(function (res) {
+          if (res.status === 401) { forceLogout('Session expired, please log in again.'); throw new Error('Unauthorized'); }
           return res.json().then(function (body) { return { ok: res.ok, body: body }; });
         })
         .then(function (result) {
@@ -204,14 +245,15 @@
           showToast('Application ' + newStatus + '.', 'success');
           loadStudents(document.getElementById('status-filter').value);
         })
-        .catch(function (err) { showToast(err.message, 'error'); });
+        .catch(function (err) { if (err.message !== 'Unauthorized') { showToast(err.message, 'error'); } });
     }
 
     function deleteApplication(admissionNumber) {
       fetch(API_BASE + '/api/admin/students/' + encodeURIComponent(admissionNumber), {
-        method: 'DELETE', headers: { 'ngrok-skip-browser-warning': 'true' }
+        method: 'DELETE', headers: authHeaders()
       })
         .then(function (res) {
+          if (res.status === 401) { forceLogout('Session expired, please log in again.'); throw new Error('Unauthorized'); }
           return res.json().then(function (body) { return { ok: res.ok, body: body }; });
         })
         .then(function (result) {
@@ -219,7 +261,7 @@
           showToast('Application deleted.', 'success');
           loadStudents(document.getElementById('status-filter').value);
         })
-        .catch(function (err) { showToast(err.message, 'error'); });
+        .catch(function (err) { if (err.message !== 'Unauthorized') { showToast(err.message, 'error'); } });
     }
 
     document.getElementById('status-filter').addEventListener('change', function (e) {
@@ -228,6 +270,7 @@
 
     document.getElementById('logout').addEventListener('click', function () {
       localStorage.removeItem(ADMIN_SESSION_KEY);
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
       window.location.href = 'admin-login.html';
     });
 

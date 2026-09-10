@@ -47,6 +47,7 @@
   <script src="js/config.js"></script>
   <script>
     var ADMIN_SESSION_KEY = 'iyungass_current_admin';
+    var ADMIN_TOKEN_KEY = 'iyungass_admin_token';
 
     function showToast(message, type) {
       var container = document.getElementById('toast-container');
@@ -61,8 +62,14 @@
       }, 3000);
     }
 
-    if (localStorage.getItem(ADMIN_SESSION_KEY)) {
+    if (localStorage.getItem(ADMIN_SESSION_KEY) && localStorage.getItem(ADMIN_TOKEN_KEY)) {
       window.location.href = 'admin.html';
+    }
+
+    var notice = sessionStorage.getItem('iyungass_admin_notice');
+    if (notice) {
+      sessionStorage.removeItem('iyungass_admin_notice');
+      showToast(notice, 'error');
     }
 
     document.getElementById('admin-login-form').addEventListener('submit', function (e) {
@@ -87,6 +94,7 @@
             throw new Error(result.body.error || 'Login failed.');
           }
           localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(result.body.admin));
+          localStorage.setItem(ADMIN_TOKEN_KEY, result.body.token);
           window.location.href = 'admin.html';
         })
         .catch(function (err) { showToast(err.message, 'error'); });

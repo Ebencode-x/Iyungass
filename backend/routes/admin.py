@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, Admin, Student
+from auth_utils import admin_required, generate_admin_token
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
@@ -15,10 +16,12 @@ def admin_login():
     if not admin or not admin.check_password(password):
         return jsonify({"error": "Invalid admin credentials"}), 401
 
-    return jsonify({"message": "Login successful", "admin": admin.to_dict()}), 200
+    token = generate_admin_token(admin.id)
+    return jsonify({"message": "Login successful", "admin": admin.to_dict(), "token": token}), 200
 
 
 @admin_bp.get("/students")
+@admin_required
 def list_students():
     """Read - Admin views all student applications, optional ?status=pending filter."""
     status = request.args.get("status")
@@ -30,6 +33,7 @@ def list_students():
 
 
 @admin_bp.put("/students/<admission_number>/status")
+@admin_required
 def update_student_status(admission_number):
     """Update - Admin approves or rejects a student's application."""
     student = Student.query.filter_by(admission_number=admission_number).first_or_404(
@@ -47,6 +51,7 @@ def update_student_status(admission_number):
 
 
 @admin_bp.delete("/students/<admission_number>")
+@admin_required
 def delete_application(admission_number):
     """Delete - Admin removes a student application entirely."""
     student = Student.query.filter_by(admission_number=admission_number).first_or_404(
