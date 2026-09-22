@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from sqlalchemy import text
 
 from config import Config
 from models import db
@@ -19,7 +20,11 @@ def create_app():
 
     @app.get("/api/health")
     def health():
-        return jsonify({"status": "ok"}), 200
+        try:
+            db.session.execute(text("SELECT 1"))
+            return jsonify({"status": "ok", "db": "ok"}), 200
+        except Exception:
+            return jsonify({"status": "ok", "db": "unreachable"}), 200
 
     return app
 
